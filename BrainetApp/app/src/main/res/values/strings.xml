@@ -1,3 +1,9 @@
 <resources>
     <string name="app_name">BrainNetTeam-04</string>
+
+    <string-array name="server">
+        <item>Fog</item>
+        <item>Cloud</item>
+        <item>Adaptive</item>
+    </string-array>
 </resources>

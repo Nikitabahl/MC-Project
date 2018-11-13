@@ -4,7 +4,7 @@
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    tools:context=".MainActivity">
+    tools:context=".activity.MainActivity">
 
     <LinearLayout
         android:layout_width="match_parent"
@@ -18,10 +18,10 @@
             android:layout_margin="15dp"/>
         
         <EditText
-            android:id="@+id/user_name"
+            android:id="@+id/et_user_name"
             android:layout_width="match_parent"
             android:layout_height="25dp"
-            android:layout_margin="15dp"
+            android:layout_margin="25dp"
             android:ems="20"
             android:paddingStart="5dp"
             android:background="@drawable/border"
@@ -40,7 +40,7 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_margin="15dp"
-            android:background="@drawable/spinner_border"/>
+            />
 
         <TextView
             android:id="@+id/tv_server_spinner"
@@ -54,7 +54,8 @@
             android:layout_width="match_parent"
             android:layout_margin="15dp"
             android:layout_height="wrap_content"
-            android:background="@drawable/spinner_border"/>
+            android:entries="@array/server"
+            />
 
         <Button
             android:id="@+id/btn_login"
