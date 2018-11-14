@@ -75,7 +75,9 @@ public class MainActivity extends Activity {
             }
         });
 
-        /*File[] files = root.listFiles();
+        /*
+        File rootDirectory = new File(BrainNetHelper.getDBFilePath() + getPackageName());
+        File[] files = rootDirectory.listFiles();
         fileList.clear();
 
         for (File file:files) {
@@ -97,11 +99,13 @@ public class MainActivity extends Activity {
 
                 String selectedFileName = adapterView.getItemAtPosition(i).toString();
 
-                /*File[] files = root.listFiles();
+                /*
+                File rootDirectory = new File(BrainNetHelper.getDBFilePath() + getPackageName());
+                File[] files = rootDirectory.listFiles();
 
                 for(File file : files){
 
-                    if(file.getName().equals(adapterView.getItemAtPosition(i).toString())) {
+                    if(file.getName().equals(selectedFileName) {
                         selectedFile =  file;
                     }
 

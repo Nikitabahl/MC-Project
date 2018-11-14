@@ -1,5 +1,7 @@
 package com.brain.net.helper;
 
+import android.os.Environment;
+
 import java.util.Arrays;
 import java.util.List;
 
@@ -20,5 +22,9 @@ public class BrainNetHelper {
 
     public static String getClassifier() {
         return "SVM";
+    }
+
+    public static String getDBFilePath() {
+        return Environment.getExternalStorageDirectory().getPath();
     }
 }
