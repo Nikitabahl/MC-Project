@@ -17,4 +17,8 @@ public class BrainNetHelper {
     public static String getCloudUrl() {
         return "http://cloud-url:8080";
     }
+
+    public static String getClassifier() {
+        return "SVM";
+    }
 }
