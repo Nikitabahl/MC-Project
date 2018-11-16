@@ -5,6 +5,7 @@ import android.app.ProgressDialog;
 import android.media.MediaPlayer;
 import android.net.Uri;
 import android.os.AsyncTask;
+import android.os.BatteryManager;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.View;
@@ -21,6 +22,7 @@ import com.brain.net.helper.BrainNetHelper;
 
 import java.io.File;
 import java.io.IOException;
+import java.net.InetAddress;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -51,7 +53,9 @@ public class MainActivity extends Activity {
     Spinner serverSpinner;
 
     File selectedFile;
-    private static String serverType = "fog";
+    private static final String FOG = "Fog";
+    private static final String CLOUD = "Cloud";
+    private static String serverType = FOG;
     private List<String> fileList = new ArrayList<>();
 
     @Override
@@ -132,10 +136,10 @@ public class MainActivity extends Activity {
 
                 switch (serverType) {
 
-                    case "Fog":
+                    case FOG:
                         url = BrainNetHelper.getFogUrl();
                         break;
-                    case "Cloud":
+                    case CLOUD:
                         url = BrainNetHelper.getCloudUrl();
                         break;
                     default:
@@ -162,7 +166,43 @@ public class MainActivity extends Activity {
     private String getAdaptiveUrl() {
 
         //Some logic to decide whether to use fog or cloud server
-        return null;
+        BatteryManager bm = (BatteryManager)getSystemService(BATTERY_SERVICE);
+        int batLevel = bm.getIntProperty(BatteryManager.BATTERY_PROPERTY_CAPACITY);
+
+        long networkDelayFog = getNetworkDelay(BrainNetHelper.getFogUrl());
+        long networkDelayCloud = getNetworkDelay(BrainNetHelper.getCloudUrl());
+
+
+        if (batLevel > 70) {
+            return CLOUD;
+        } else {
+
+            if (networkDelayCloud >= networkDelayFog) {
+                return CLOUD;
+            }  else {
+                return FOG;
+            }
+        }
+    }
+
+    private long getNetworkDelay(String host) {
+
+        int timeout = 3000;
+        boolean reachable = false;
+        long beforeTime = System.currentTimeMillis();
+
+        try {
+            reachable = InetAddress.getByName(host).isReachable(timeout);
+        } catch (Exception e) {
+            Log.e("Network Delay", e.getMessage());
+        }
+        long afterTime = System.currentTimeMillis();
+        long timeDifference = afterTime - beforeTime;
+
+        if (!reachable) {
+            timeDifference = Long.MAX_VALUE;
+        }
+        return timeDifference;
     }
 
     public class LoginAsyncTask extends AsyncTask<String, String, String> {
