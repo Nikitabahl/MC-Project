@@ -280,7 +280,7 @@ public class MainActivity extends Activity {
 
                 default:
                     Toast.makeText(getApplicationContext(),
-                            "Server took too long to respond",Toast.LENGTH_SHORT).show();
+                            "Server took too long to respond", Toast.LENGTH_SHORT).show();
             }
         }
     }
