@@ -40,10 +40,11 @@ public class FileHandlerController {
     }
 
     @PostMapping("/authenticate")
-    public void authenticateUser(
+    public boolean authenticateUser(
             @RequestParam(value = "userName") String userName,
             @RequestPart(value = "file") MultipartFile file) {
 
+        return amazonS3ClientService.authenticateUser(userName, file);
     }
 
     @PostMapping(path = "/mongo")

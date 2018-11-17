@@ -10,5 +10,7 @@ public interface ClientServiceInterface {
     void deleteFileFromS3Bucket(String fileName);
 
     BrainSignalsInfo uploadDataToMongo(String userName, MultipartFile multipartFile);
+
+    boolean authenticateUser(String userName, MultipartFile multipartFile);
 }
 

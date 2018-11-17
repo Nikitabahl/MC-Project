@@ -1,6 +1,5 @@
 package asu.brainnet.model;
 
-import org.bson.BSON;
 import org.springframework.data.mongodb.core.mapping.Document;
 import org.springframework.data.mongodb.core.mapping.Field;
 

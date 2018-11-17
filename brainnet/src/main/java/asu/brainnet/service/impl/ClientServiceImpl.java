@@ -9,6 +9,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.mongodb.core.MongoTemplate;
+import org.springframework.data.mongodb.core.query.Criteria;
+import org.springframework.data.mongodb.core.query.Query;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Component;
 
@@ -88,6 +90,36 @@ public class ClientServiceImpl implements ClientServiceInterface {
             logger.error("Unable to insert data into mongo", e);
         }
         return brainSignalsInfo;
+    }
+
+    @Override
+    public boolean authenticateUser(String userName, MultipartFile multipartFile) {
+
+        boolean isAuthenticated = false;
+        String fileName = multipartFile.getOriginalFilename();
+
+        Query query = new Query();
+        query.addCriteria(Criteria.where("user_name").is(userName));
+        BrainSignalsInfo brainSignalsInfo = mongoTemplate.findOne(query, BrainSignalsInfo.class);
+
+        if (null == brainSignalsInfo) {
+            throw new RuntimeException("No file present for user name - " + userName);
+        }
+
+        try {
+
+            File file = new File(fileName);
+            FileOutputStream fos = new FileOutputStream(file);
+            fos.write(multipartFile.getBytes());
+            fos.close();
+
+            //Run Ml algorithm
+            isAuthenticated = true;
+
+        } catch (Exception e) {
+            logger.error("Unable to authenticate the user", e);
+        }
+        return isAuthenticated;
     }
 
     private static String readFile(MultipartFile file) throws IOException {
