@@ -66,6 +66,19 @@
 		<groupId>org.springframework.boot</groupId>
 		<artifactId>spring-boot-starter-data-mongodb</artifactId>
 	</dependency>
+
+	<dependency>
+		<groupId>com.brain.net.svm</groupId>
+		<artifactId>svm</artifactId>
+		<version>1.0</version>
+	</dependency>
+
+    <dependency>
+        <groupId>com.java.builder</groupId>
+        <artifactId>javabuilder</artifactId>
+        <version>1.0</version>
+    </dependency>
+
 </dependencies>
 	<build>
 		<plugins>
