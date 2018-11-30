@@ -79,16 +79,15 @@ public class MainActivity extends Activity {
             }
         });
 
-        /*
-        File rootDirectory = new File(BrainNetHelper.getDBFilePath() + getPackageName());
+        File rootDirectory = new File(BrainNetHelper.getDBFilePath());
         File[] files = rootDirectory.listFiles();
         fileList.clear();
 
-        for (File file:files) {
+        for (File file : files) {
             fileList.add(file.getName());
-        }*/
+        }
 
-        fileList = BrainNetHelper.getBrainSignalFileList();
+        selectedFile = files[0];
 
         ArrayAdapter<String> file_list = new ArrayAdapter<>(this,
                 android.R.layout.simple_spinner_item, fileList);
@@ -103,17 +102,15 @@ public class MainActivity extends Activity {
 
                 String selectedFileName = adapterView.getItemAtPosition(i).toString();
 
-                /*
-                File rootDirectory = new File(BrainNetHelper.getDBFilePath() + getPackageName());
+                File rootDirectory = new File(BrainNetHelper.getDBFilePath());
                 File[] files = rootDirectory.listFiles();
 
                 for(File file : files){
 
-                    if(file.getName().equals(selectedFileName) {
+                    if(file.getName().equals(selectedFileName)) {
                         selectedFile =  file;
                     }
-
-                }*/
+                }
             }
 
             @Override
@@ -169,8 +166,8 @@ public class MainActivity extends Activity {
         BatteryManager bm = (BatteryManager)getSystemService(BATTERY_SERVICE);
         int batLevel = bm.getIntProperty(BatteryManager.BATTERY_PROPERTY_CAPACITY);
 
-        long networkDelayFog = getNetworkDelay(BrainNetHelper.getFogUrl());
-        long networkDelayCloud = getNetworkDelay(BrainNetHelper.getCloudUrl());
+        long networkDelayFog = getNetworkDelay(BrainNetHelper.getFogServer());
+        long networkDelayCloud = getNetworkDelay(BrainNetHelper.getCloudServer());
 
 
         if (batLevel > 70) {
@@ -223,7 +220,7 @@ public class MainActivity extends Activity {
         protected String doInBackground(String... args) {
 
             String url = args[1];
-            String fileName = args[0];
+            String userName = args[0];
             String classifier = BrainNetHelper.getClassifier();
 
             OkHttpClient client = new OkHttpClient();
@@ -233,8 +230,11 @@ public class MainActivity extends Activity {
                     .setType(MultipartBody.FORM)
                     .addFormDataPart("classifier", classifier)
                     .addFormDataPart("type","text/csv")
-                    .addFormDataPart("file", fileName, fileData)
+                    .addFormDataPart("file", selectedFile.getName(), fileData)
                     .build();
+
+
+            url += "?userName=" + userName;
 
             Request request = new Request.Builder()
                     .url(url)

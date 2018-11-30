@@ -12,12 +12,20 @@ public class BrainNetHelper {
         return Arrays.asList("saheb.edf", "natalya.edf", "nikita.edf", "harshdeep.edf");
     }
 
+    public static String getFogServer() {
+        return "http://10.157.20.98:8080";
+    }
+
+    public static String getCloudServer() {
+        return "http://54.184.104.34:8080";
+    }
+
     public static String getFogUrl() {
-        return "http://fog-url:8080";
+        return getFogServer() + "/files/authenticate";
     }
 
     public static String getCloudUrl() {
-        return "http://cloud-url:8080";
+        return getCloudServer() + "/files/authenticate";
     }
 
     public static String getClassifier() {
@@ -25,6 +33,6 @@ public class BrainNetHelper {
     }
 
     public static String getDBFilePath() {
-        return Environment.getExternalStorageDirectory().getPath();
+        return Environment.getExternalStorageDirectory().getPath() + "/brainnet";
     }
 }
