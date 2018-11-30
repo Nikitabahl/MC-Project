@@ -1,12 +1,19 @@
 package com.brain.net.activity;
 
+import android.Manifest;
 import android.app.Activity;
 import android.app.ProgressDialog;
+import android.content.Intent;
+import android.content.pm.PackageManager;
+import android.database.Cursor;
+import android.database.sqlite.SQLiteDatabase;
 import android.media.MediaPlayer;
 import android.net.Uri;
 import android.os.AsyncTask;
 import android.os.BatteryManager;
 import android.os.Bundle;
+import android.support.v4.app.ActivityCompat;
+import android.support.v4.content.ContextCompat;
 import android.util.Log;
 import android.view.View;
 import android.widget.AdapterView;
@@ -57,6 +64,14 @@ public class MainActivity extends Activity {
     private static final String CLOUD = "Cloud";
     private static String serverType = FOG;
     private List<String> fileList = new ArrayList<>();
+    private SQLiteDatabase myDatabase;
+    private static final int REQUEST_WRITE_STORAGE = 112;
+
+    public static final String SERVER = "server";
+    public static final String LATENCY = "latency";
+    public static final String BATTERY_LEVEL_1 = "battery_level_1";
+    public static final String BATTERY_LEVEL_2 = "battery_level_2";
+
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -64,8 +79,38 @@ public class MainActivity extends Activity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
+        Boolean hasPermission = (ContextCompat.checkSelfPermission(MainActivity.this,
+                Manifest.permission.WRITE_EXTERNAL_STORAGE) == PackageManager.PERMISSION_GRANTED);
+
+        if (!hasPermission) {
+            ActivityCompat.requestPermissions(MainActivity.this,
+                    new String[]{Manifest.permission.WRITE_EXTERNAL_STORAGE},
+                    REQUEST_WRITE_STORAGE);
+        }
+
         //bind xml to activity
         ButterKnife.bind(this);
+
+        File dbpath = new File(BrainNetHelper.getFilePathDirectory());
+
+        if (!dbpath.exists()) {
+            dbpath.mkdirs();
+        }
+
+        File database = new File(dbpath, BrainNetHelper.getDbFile());
+
+        if (!database.exists()) {
+            try {
+                database.createNewFile();
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+        }
+
+        myDatabase = SQLiteDatabase.openOrCreateDatabase(database, null);
+
+        myDatabase.execSQL("CREATE TABLE IF NOT EXISTS adaptive_metrics(server VARCHAR, " +
+                "latency long, count int)");
 
         serverSpinner.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
             @Override
@@ -79,16 +124,15 @@ public class MainActivity extends Activity {
             }
         });
 
-        /*
-        File rootDirectory = new File(BrainNetHelper.getDBFilePath() + getPackageName());
+        File rootDirectory = new File(BrainNetHelper.getFilePathDirectory());
         File[] files = rootDirectory.listFiles();
         fileList.clear();
 
-        for (File file:files) {
+        for (File file : files) {
             fileList.add(file.getName());
-        }*/
+        }
 
-        fileList = BrainNetHelper.getBrainSignalFileList();
+        selectedFile = files[0];
 
         ArrayAdapter<String> file_list = new ArrayAdapter<>(this,
                 android.R.layout.simple_spinner_item, fileList);
@@ -103,17 +147,15 @@ public class MainActivity extends Activity {
 
                 String selectedFileName = adapterView.getItemAtPosition(i).toString();
 
-                /*
-                File rootDirectory = new File(BrainNetHelper.getDBFilePath() + getPackageName());
+                File rootDirectory = new File(BrainNetHelper.getFilePathDirectory());
                 File[] files = rootDirectory.listFiles();
 
                 for(File file : files){
 
-                    if(file.getName().equals(selectedFileName) {
+                    if(file.getName().equals(selectedFileName)) {
                         selectedFile =  file;
                     }
-
-                }*/
+                }
             }
 
             @Override
@@ -147,7 +189,7 @@ public class MainActivity extends Activity {
                         break;
                 }
 
-                new LoginAsyncTask().execute(userName.getText().toString(), url);
+                new LoginAsyncTask().execute(userName.getText().toString(), url, serverType);
             }
         });
     }
@@ -169,15 +211,44 @@ public class MainActivity extends Activity {
         BatteryManager bm = (BatteryManager)getSystemService(BATTERY_SERVICE);
         int batLevel = bm.getIntProperty(BatteryManager.BATTERY_PROPERTY_CAPACITY);
 
-        long networkDelayFog = getNetworkDelay(BrainNetHelper.getFogUrl());
-        long networkDelayCloud = getNetworkDelay(BrainNetHelper.getCloudUrl());
+        Cursor resultSet = myDatabase.rawQuery("Select * from adaptive_metrics " +
+                "WHERE server = '" + FOG + "'",null);
 
+        long networkDelayFog = Long.MAX_VALUE;
+        long networkDelayCloud = Long.MAX_VALUE;
+
+        if (resultSet.getCount() == 1) {
+            resultSet.moveToFirst();
+             networkDelayFog = resultSet.getLong(1);
+        }
+        resultSet.close();
+
+        resultSet = myDatabase.rawQuery("Select * from adaptive_metrics " +
+                "WHERE server = '" + CLOUD + "'",null);
+
+        if (resultSet.getCount() == 1) {
+            resultSet.moveToFirst();
+            networkDelayCloud = resultSet.getLong(1);
+        }
+
+        resultSet.close();
 
         if (batLevel > 70) {
             return CLOUD;
         } else {
 
-            if (networkDelayCloud >= networkDelayFog) {
+            if (networkDelayCloud == networkDelayFog && networkDelayCloud == Long.MAX_VALUE) {
+
+                double num = Math.random();
+
+                if (num < 0.5) {
+                    return CLOUD;
+                } else {
+                    return FOG;
+                }
+            }
+
+            if (networkDelayCloud <= networkDelayFog) {
                 return CLOUD;
             }  else {
                 return FOG;
@@ -210,6 +281,10 @@ public class MainActivity extends Activity {
         int responseCode = 0;
         public ProgressDialog dialog = new ProgressDialog(MainActivity.this);
         long startTimer, endTimer;
+        String server;
+
+        BatteryManager bm = (BatteryManager)getSystemService(BATTERY_SERVICE);
+        int initialBatteryLevel = bm.getIntProperty(BatteryManager.BATTERY_PROPERTY_CAPACITY);
 
         @Override
         protected void onPreExecute() {
@@ -223,7 +298,8 @@ public class MainActivity extends Activity {
         protected String doInBackground(String... args) {
 
             String url = args[1];
-            String fileName = args[0];
+            String userName = args[0];
+            server = args[2];
             String classifier = BrainNetHelper.getClassifier();
 
             OkHttpClient client = new OkHttpClient();
@@ -233,8 +309,11 @@ public class MainActivity extends Activity {
                     .setType(MultipartBody.FORM)
                     .addFormDataPart("classifier", classifier)
                     .addFormDataPart("type","text/csv")
-                    .addFormDataPart("file", fileName, fileData)
+                    .addFormDataPart("file", selectedFile.getName(), fileData)
                     .build();
+
+
+            url += "?userName=" + userName;
 
             Request request = new Request.Builder()
                     .url(url)
@@ -266,11 +345,42 @@ public class MainActivity extends Activity {
             endTimer = System.currentTimeMillis();
             long timer = endTimer - startTimer;
 
+            Cursor resultSet = myDatabase.rawQuery("Select * from adaptive_metrics " +
+                    "WHERE server = '" + server + "'",null);
+
+            if (resultSet.getCount() == 0) {
+                myDatabase.execSQL("INSERT into " +
+                        "adaptive_metrics(server, latency, count) " +
+                        "VALUES ('" + server + "', "+ timer +","+ 1 +")");
+            } else {
+                resultSet.moveToFirst();
+                int count = resultSet.getInt(1);
+                long timerDB = resultSet.getLong(2);
+
+                timerDB += timerDB * count;
+                count += 1;
+                timerDB /= (long) count;
+
+                myDatabase.execSQL("Update adaptive_metrics set latency = " + timerDB +
+                        " , count = " + count + " WHERE server = '" + server + "'");
+            }
+            resultSet.close();
+
             switch (responseCode) {
 
                 case 200:
                     Toast.makeText(getApplicationContext(),"User Authenticated in "
                             + Long.toString(timer) + " ms", Toast.LENGTH_SHORT).show();
+
+                    Intent intent = new Intent(MainActivity.this, AuthenticatedUser.class);
+                    int finalBatteryLevel = bm.getIntProperty(BatteryManager.BATTERY_PROPERTY_CAPACITY);
+
+                    intent.putExtra(LATENCY, timer);
+                    intent.putExtra(BATTERY_LEVEL_1, initialBatteryLevel);
+                    intent.putExtra(BATTERY_LEVEL_2, finalBatteryLevel);
+                    intent.putExtra(SERVER, server);
+                    startActivity(intent);
+
                     break;
 
                 case 404:

@@ -1,0 +1,77 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical"
+    android:background="#1e90ff"
+    xmlns:tools="http://schemas.android.com/tools">
+
+    <TextView
+        android:id="@+id/tv_authenticated"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_gravity="center"
+        android:layout_marginTop="60dp"
+        android:text="You are authenticated"
+        android:textColor="#FFFFFF"
+        android:textSize="30dp"
+        tools:layout_editor_absoluteX="5dp"
+        tools:layout_editor_absoluteY="4dp" />
+
+    <TextView
+        android:id="@+id/tv_server"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_gravity="center"
+        android:layout_marginTop="10dp"
+        android:text="Server type :"
+        android:textColor="#FFFFFF"
+        android:textSize="20dp"
+        tools:layout_editor_absoluteX="5dp"
+        tools:layout_editor_absoluteY="4dp" />
+
+    <TextView
+        android:id="@+id/tv_initial_battery"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_gravity="center"
+        android:layout_marginTop="10dp"
+        android:text="Initial Battery :"
+        android:textColor="#FFFFFF"
+        android:textSize="20dp"
+        tools:layout_editor_absoluteX="5dp"
+        tools:layout_editor_absoluteY="4dp" />
+
+    <TextView
+        android:id="@+id/tv_final_battery"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_gravity="center"
+        android:layout_marginTop="10dp"
+        android:text="Final Battery : "
+        android:textColor="#FFFFFF"
+        android:textSize="20dp"
+        tools:layout_editor_absoluteX="5dp"
+        tools:layout_editor_absoluteY="4dp" />
+
+    <TextView
+        android:id="@+id/tv_time_taken"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_gravity="center"
+        android:layout_marginTop="10dp"
+        android:text="Time Taken :"
+        android:textColor="#FFFFFF"
+        android:textSize="20dp"
+        tools:layout_editor_absoluteX="5dp"
+        tools:layout_editor_absoluteY="4dp" />
+
+    <Button
+        android:id="@+id/bt_logout"
+        android:layout_gravity="center"
+        android:layout_width="wrap_content"
+        android:layout_marginTop="50dp"
+        android:text="Log Out"
+        android:layout_height="wrap_content" />
+
+</LinearLayout>
