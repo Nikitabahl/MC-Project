@@ -1,5 +1,7 @@
 package com.brain.net.helper;
 
+import android.database.sqlite.SQLiteDatabase;
+import android.database.sqlite.SQLiteException;
 import android.os.Environment;
 
 import java.util.Arrays;
@@ -32,7 +34,15 @@ public class BrainNetHelper {
         return "SVM";
     }
 
-    public static String getDBFilePath() {
+    public static String getFilePathDirectory() {
         return Environment.getExternalStorageDirectory().getPath() + "/brainnet";
+    }
+
+    public static String getDbFile() {
+        return "brainnet.db";
+    }
+
+    public static String getDbPath() {
+        return getFilePathDirectory() + "/" + getDbFile();
     }
 }
