@@ -3,6 +3,7 @@ package com.brain.net.activity;
 import android.Manifest;
 import android.app.Activity;
 import android.app.ProgressDialog;
+import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
@@ -65,6 +66,12 @@ public class MainActivity extends Activity {
     private List<String> fileList = new ArrayList<>();
     private SQLiteDatabase myDatabase;
     private static final int REQUEST_WRITE_STORAGE = 112;
+
+    public static final String SERVER = "server";
+    public static final String LATENCY = "latency";
+    public static final String BATTERY_LEVEL_1 = "battery_level_1";
+    public static final String BATTERY_LEVEL_2 = "battery_level_2";
+
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -276,6 +283,9 @@ public class MainActivity extends Activity {
         long startTimer, endTimer;
         String server;
 
+        BatteryManager bm = (BatteryManager)getSystemService(BATTERY_SERVICE);
+        int initialBatteryLevel = bm.getIntProperty(BatteryManager.BATTERY_PROPERTY_CAPACITY);
+
         @Override
         protected void onPreExecute() {
             startTimer = System.currentTimeMillis();
@@ -335,23 +345,6 @@ public class MainActivity extends Activity {
             endTimer = System.currentTimeMillis();
             long timer = endTimer - startTimer;
 
-            switch (responseCode) {
-
-                case 200:
-                    Toast.makeText(getApplicationContext(),"User Authenticated in "
-                            + Long.toString(timer) + " ms", Toast.LENGTH_SHORT).show();
-                    break;
-
-                case 404:
-                    Toast.makeText(getApplicationContext(),
-                            "User UnAuthorized", Toast.LENGTH_SHORT).show();
-                    break;
-
-                default:
-                    Toast.makeText(getApplicationContext(),
-                            "Server took too long to respond", Toast.LENGTH_SHORT).show();
-            }
-
             Cursor resultSet = myDatabase.rawQuery("Select * from adaptive_metrics " +
                     "WHERE server = '" + server + "'",null);
 
@@ -368,10 +361,37 @@ public class MainActivity extends Activity {
                 count += 1;
                 timerDB /= (long) count;
 
-                myDatabase.execSQL("Update adaptive_metrics set timer = " + timerDB +
+                myDatabase.execSQL("Update adaptive_metrics set latency = " + timerDB +
                         " , count = " + count + " WHERE server = '" + server + "'");
             }
             resultSet.close();
+
+            switch (responseCode) {
+
+                case 200:
+                    Toast.makeText(getApplicationContext(),"User Authenticated in "
+                            + Long.toString(timer) + " ms", Toast.LENGTH_SHORT).show();
+
+                    Intent intent = new Intent(MainActivity.this, AuthenticatedUser.class);
+                    int finalBatteryLevel = bm.getIntProperty(BatteryManager.BATTERY_PROPERTY_CAPACITY);
+
+                    intent.putExtra(LATENCY, timer);
+                    intent.putExtra(BATTERY_LEVEL_1, initialBatteryLevel);
+                    intent.putExtra(BATTERY_LEVEL_2, finalBatteryLevel);
+                    intent.putExtra(SERVER, server);
+                    startActivity(intent);
+
+                    break;
+
+                case 404:
+                    Toast.makeText(getApplicationContext(),
+                            "User UnAuthorized", Toast.LENGTH_SHORT).show();
+                    break;
+
+                default:
+                    Toast.makeText(getApplicationContext(),
+                            "Server took too long to respond", Toast.LENGTH_SHORT).show();
+            }
         }
     }
 }

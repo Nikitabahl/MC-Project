@@ -45,4 +45,20 @@ public class BrainNetHelper {
     public static String getDbPath() {
         return getFilePathDirectory() + "/" + getDbFile();
     }
+
+    public static String getServerText(String serverText) {
+        return "Server type : " + serverText;
+    }
+
+    public static String getInitialBattery(int initialBattery) {
+        return "Initial Battery : " + initialBattery;
+    }
+
+    public static String getFinalBattery(int finalBattery) {
+        return "Final Battery : " + finalBattery;
+    }
+
+    public static String getLatency(Long latency) {
+        return "Time taken : " + latency;
+    }
 }
