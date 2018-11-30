@@ -70,11 +70,11 @@
 	<dependency>
 		<groupId>com.brain.net.svm</groupId>
 		<artifactId>svm</artifactId>
-		<version>1.0</version>
+		<version>8.0</version>
 	</dependency>
 
     <dependency>
-        <groupId>com.java.builder</groupId>
+        <groupId>com.brain.net.javabuilder</groupId>
         <artifactId>javabuilder</artifactId>
         <version>1.0</version>
     </dependency>

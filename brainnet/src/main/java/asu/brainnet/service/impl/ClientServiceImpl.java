@@ -1,6 +1,6 @@
 package asu.brainnet.service.impl;
 
-import SVM.Class3;
+import SVM.Class1;
 import asu.brainnet.model.BrainSignalsInfo;
 import asu.brainnet.service.ClientServiceInterface;
 import com.amazonaws.AmazonServiceException;
@@ -138,28 +138,36 @@ public class ClientServiceImpl implements ClientServiceInterface {
         if (f.exists()) {
 
             Object[] resultSum = null;
-            Class3 svm = new Class3();
 
-            resultSum = svm.SVM(1, incomingFile, registeredFile);
+            try {
 
-            MWArray javaSum = (MWNumericArray) resultSum[0];
+                Class1 svm = new Class1();
 
-            double[][] total = (double[][])javaSum.toArray();
+                resultSum = svm.SVM(1, incomingFile, registeredFile);
 
-            int finalResult = (int) total[0][0];
+                MWArray javaSum = (MWNumericArray) resultSum[0];
 
-            return finalResult == 1;
+                double[][] total = (double[][]) javaSum.toArray();
+
+                int finalResult = (int) total[0][0];
+
+
+                return finalResult == 1;
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
         }
         else {
             return false;
         }
+        return false;
     }
 
     private static String readFile(MultipartFile file) throws IOException {
 
         InputStream fileStream = file.getInputStream();
 
-        byte[] buffer = new byte[8192 * 2];
+        byte[] buffer = new byte[3500000];
         int size = fileStream.read(buffer);
         return new String(buffer, 0, size);
     }
