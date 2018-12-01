@@ -85,6 +85,11 @@
 			<plugin>
 				<groupId>org.springframework.boot</groupId>
 				<artifactId>spring-boot-maven-plugin</artifactId>
+				<configuration>
+					<environmentVariables>
+						<DYLD_LIBRARY_PATH>/Applications/MATLAB/MATLAB_Runtime/v95/runtime/maci64:/Applications/MATLAB/MATLAB_Runtime/v95/sys/os/maci64:/Applications/MATLAB/MATLAB_Runtime/v95/bin/maci64:/Applications/MATLAB/MATLAB_Runtime/v95/extern/bin/maci64/Applications/MATLAB_R2018b.app/runtime/maci64:/Applications/MATLAB_R2018b.app/bin/maci64:/Applications/MATLAB_R2018b.app/sys/os/maci64:</DYLD_LIBRARY_PATH>
+					</environmentVariables>
+				</configuration>
 			</plugin>
 		</plugins>
 	</build>

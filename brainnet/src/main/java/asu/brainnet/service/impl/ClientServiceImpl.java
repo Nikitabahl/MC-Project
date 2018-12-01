@@ -14,6 +14,12 @@ import com.amazonaws.services.s3.model.PutObjectRequest;
 import com.mathworks.toolbox.javabuilder.MWArray;
 import com.mathworks.toolbox.javabuilder.MWException;
 import com.mathworks.toolbox.javabuilder.MWNumericArray;
+import com.mongodb.client.MongoDatabase;
+import com.mongodb.client.gridfs.GridFSBucket;
+import com.mongodb.client.gridfs.GridFSBuckets;
+import com.mongodb.client.gridfs.model.GridFSUploadOptions;
+import org.bson.Document;
+import org.bson.types.ObjectId;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.data.mongodb.core.MongoTemplate;
@@ -23,10 +29,7 @@ import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
-import java.io.File;
-import java.io.FileOutputStream;
-import java.io.IOException;
-import java.io.InputStream;
+import java.io.*;
 
 @Service
 public class ClientServiceImpl implements ClientServiceInterface {
@@ -81,9 +84,9 @@ public class ClientServiceImpl implements ClientServiceInterface {
         }
     }
 
-    public BrainSignalsInfo uploadDataToMongo(String userName, MultipartFile multipartFile) {
+    public void uploadDataToMongo(String userName, MultipartFile multipartFile) throws IOException {
 
-        BrainSignalsInfo brainSignalsInfo = new BrainSignalsInfo();
+       /* BrainSignalsInfo brainSignalsInfo = new BrainSignalsInfo();
 
         try {
             brainSignalsInfo.setUserName(userName);
@@ -94,7 +97,28 @@ public class ClientServiceImpl implements ClientServiceInterface {
         } catch (Exception e) {
             logger.error("Unable to insert data into mongo", e);
         }
-        return brainSignalsInfo;
+        return brainSignalsInfo;*/
+
+        String fileName = multipartFile.getOriginalFilename();
+        File file = new File(fileName);
+        FileOutputStream fos = new FileOutputStream(file);
+        fos.write(multipartFile.getBytes());
+        fos.close();
+
+        MongoDatabase myDatabase = mongoTemplate.getDb();
+
+        GridFSBucket gridFSBucket = GridFSBuckets.create(myDatabase);
+
+        try {
+            InputStream streamToUploadFrom = new FileInputStream(new File(fileName));
+            // Create some custom options
+            GridFSUploadOptions options = new GridFSUploadOptions()
+                    .metadata(new Document("type", "presentation"));
+
+            ObjectId fileId = gridFSBucket.uploadFromStream("mongodb-tutorial", streamToUploadFrom, options);
+        } catch (FileNotFoundException e){
+            // handle exception
+        }
     }
 
     @Override
@@ -120,8 +144,11 @@ public class ClientServiceImpl implements ClientServiceInterface {
 
             File authenticationFile = new File(authenticateFileName);
             FileOutputStream authenticationFileOS = new FileOutputStream(authenticationFile);
+            System.out.print(brainSignalsInfo.getFileContent().getBytes().length);
             authenticationFileOS.write(brainSignalsInfo.getFileContent().getBytes());
             authenticationFileOS.close();
+
+
 
             isAuthenticated = authenticateFiles(fileName, authenticateFileName);
 
