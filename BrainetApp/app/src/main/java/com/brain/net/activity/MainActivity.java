@@ -196,7 +196,10 @@ public class MainActivity extends Activity {
 
     private void playVideo() {
 
-        String uriPath = "android.resource://" + getPackageName() + "/" + R.raw.meditate;
+        Toast.makeText(getApplicationContext(),
+                "Wait for Authentication. Collecting brain Signals", Toast.LENGTH_SHORT).show();
+
+        String uriPath = "android.resource://" + getPackageName() + "/" + R.raw.soothing;
         Uri uri = Uri.parse(uriPath);
 
         videoView.setVideoURI(uri);
@@ -234,7 +237,8 @@ public class MainActivity extends Activity {
         resultSet.close();
 
         if (batLevel > 70) {
-            return CLOUD;
+            serverType = CLOUD;
+            return BrainNetHelper.getCloudUrl();
         } else {
 
             if (networkDelayCloud == networkDelayFog && networkDelayCloud == Long.MAX_VALUE) {
@@ -242,16 +246,20 @@ public class MainActivity extends Activity {
                 double num = Math.random();
 
                 if (num < 0.5) {
-                    return CLOUD;
+                    serverType = CLOUD;
+                    return BrainNetHelper.getCloudUrl();
                 } else {
-                    return FOG;
+                    serverType = FOG;
+                    return BrainNetHelper.getFogUrl();
                 }
             }
 
             if (networkDelayCloud <= networkDelayFog) {
-                return CLOUD;
+                serverType = CLOUD;
+                return BrainNetHelper.getCloudUrl();
             }  else {
-                return FOG;
+                serverType = FOG;
+                return BrainNetHelper.getFogUrl();
             }
         }
     }
@@ -281,7 +289,7 @@ public class MainActivity extends Activity {
         int responseCode = 0;
         public ProgressDialog dialog = new ProgressDialog(MainActivity.this);
         long startTimer, endTimer;
-        String server;
+        String server, responseBody;
 
         BatteryManager bm = (BatteryManager)getSystemService(BATTERY_SERVICE);
         int initialBatteryLevel = bm.getIntProperty(BatteryManager.BATTERY_PROPERTY_CAPACITY);
@@ -326,7 +334,9 @@ public class MainActivity extends Activity {
                 System.out.println(request);
                 System.out.println(response);
 
+                responseBody = response.body().string();
                 responseCode = response.code();
+
 
             } catch (IOException e) {
                 Log.e("Login call", e.getMessage());
@@ -345,41 +355,28 @@ public class MainActivity extends Activity {
             endTimer = System.currentTimeMillis();
             long timer = endTimer - startTimer;
 
-            Cursor resultSet = myDatabase.rawQuery("Select * from adaptive_metrics " +
-                    "WHERE server = '" + server + "'",null);
-
-            if (resultSet.getCount() == 0) {
-                myDatabase.execSQL("INSERT into " +
-                        "adaptive_metrics(server, latency, count) " +
-                        "VALUES ('" + server + "', "+ timer +","+ 1 +")");
-            } else {
-                resultSet.moveToFirst();
-                int count = resultSet.getInt(1);
-                long timerDB = resultSet.getLong(2);
-
-                timerDB += timerDB * count;
-                count += 1;
-                timerDB /= (long) count;
-
-                myDatabase.execSQL("Update adaptive_metrics set latency = " + timerDB +
-                        " , count = " + count + " WHERE server = '" + server + "'");
-            }
-            resultSet.close();
-
             switch (responseCode) {
 
                 case 200:
-                    Toast.makeText(getApplicationContext(),"User Authenticated in "
-                            + Long.toString(timer) + " ms", Toast.LENGTH_SHORT).show();
 
-                    Intent intent = new Intent(MainActivity.this, AuthenticatedUser.class);
-                    int finalBatteryLevel = bm.getIntProperty(BatteryManager.BATTERY_PROPERTY_CAPACITY);
+                    insertOrUpdateLatencyData(server, timer);
 
-                    intent.putExtra(LATENCY, timer);
-                    intent.putExtra(BATTERY_LEVEL_1, initialBatteryLevel);
-                    intent.putExtra(BATTERY_LEVEL_2, finalBatteryLevel);
-                    intent.putExtra(SERVER, server);
-                    startActivity(intent);
+                    if (responseBody.equals("true")) {
+                        Toast.makeText(getApplicationContext(), "User Authenticated in "
+                                + Long.toString(timer) + " ms", Toast.LENGTH_SHORT).show();
+
+                        Intent intent = new Intent(MainActivity.this, AuthenticatedUser.class);
+                        int finalBatteryLevel = bm.getIntProperty(BatteryManager.BATTERY_PROPERTY_CAPACITY);
+
+                        intent.putExtra(LATENCY, timer);
+                        intent.putExtra(BATTERY_LEVEL_1, initialBatteryLevel);
+                        intent.putExtra(BATTERY_LEVEL_2, finalBatteryLevel);
+                        intent.putExtra(SERVER, server);
+                        startActivity(intent);
+                    } else {
+                        Toast.makeText(getApplicationContext(),
+                                "User UnAuthorized", Toast.LENGTH_SHORT).show();
+                    }
 
                     break;
 
@@ -393,5 +390,29 @@ public class MainActivity extends Activity {
                             "Server took too long to respond", Toast.LENGTH_SHORT).show();
             }
         }
+    }
+
+    private void insertOrUpdateLatencyData(String server, long timer) {
+
+        Cursor resultSet = myDatabase.rawQuery("Select * from adaptive_metrics " +
+                "WHERE server = '" + server + "'",null);
+
+        if (resultSet.getCount() == 0) {
+            myDatabase.execSQL("INSERT into " +
+                    "adaptive_metrics(server, latency, count) " +
+                    "VALUES ('" + server + "', "+ timer +","+ 1 +")");
+        } else {
+            resultSet.moveToFirst();
+            int count = resultSet.getInt(1);
+            long timerDB = resultSet.getLong(2);
+
+            timerDB += timerDB * count;
+            count += 1;
+            timerDB /= (long) count;
+
+            myDatabase.execSQL("Update adaptive_metrics set latency = " + timerDB +
+                    " , count = " + count + " WHERE server = '" + server + "'");
+        }
+        resultSet.close();
     }
 }

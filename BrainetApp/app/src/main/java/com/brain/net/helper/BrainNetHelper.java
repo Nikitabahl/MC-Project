@@ -1,7 +1,5 @@
 package com.brain.net.helper;
 
-import android.database.sqlite.SQLiteDatabase;
-import android.database.sqlite.SQLiteException;
 import android.os.Environment;
 
 import java.util.Arrays;
@@ -15,11 +13,11 @@ public class BrainNetHelper {
     }
 
     public static String getFogServer() {
-        return "http://10.157.20.98:8080";
+        return "http://192.168.0.8:8080";
     }
 
     public static String getCloudServer() {
-        return "http://54.184.104.34:8080";
+        return "http://52.36.250.14:8080";
     }
 
     public static String getFogUrl() {
@@ -51,14 +49,14 @@ public class BrainNetHelper {
     }
 
     public static String getInitialBattery(int initialBattery) {
-        return "Initial Battery : " + initialBattery;
+        return "Initial Battery : " + initialBattery + " %";
     }
 
     public static String getFinalBattery(int finalBattery) {
-        return "Final Battery : " + finalBattery;
+        return "Final Battery : " + finalBattery + " %";
     }
 
     public static String getLatency(Long latency) {
-        return "Time taken : " + latency;
+        return "Time taken : " + latency + " ms";
     }
 }
