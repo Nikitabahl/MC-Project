@@ -17,6 +17,7 @@ import com.mathworks.toolbox.javabuilder.MWNumericArray;
 import com.mongodb.client.MongoDatabase;
 import com.mongodb.client.gridfs.GridFSBucket;
 import com.mongodb.client.gridfs.GridFSBuckets;
+import com.mongodb.client.gridfs.model.GridFSDownloadByNameOptions;
 import com.mongodb.client.gridfs.model.GridFSUploadOptions;
 import org.bson.Document;
 import org.bson.types.ObjectId;
@@ -84,20 +85,7 @@ public class ClientServiceImpl implements ClientServiceInterface {
         }
     }
 
-    public void uploadDataToMongo(String userName, MultipartFile multipartFile) throws IOException {
-
-       /* BrainSignalsInfo brainSignalsInfo = new BrainSignalsInfo();
-
-        try {
-            brainSignalsInfo.setUserName(userName);
-            brainSignalsInfo.setFileContent(readFile(multipartFile));
-
-            brainSignalsInfo = mongoTemplate.insert(brainSignalsInfo);
-
-        } catch (Exception e) {
-            logger.error("Unable to insert data into mongo", e);
-        }
-        return brainSignalsInfo;*/
+    public boolean uploadDataToMongo(String userName, MultipartFile multipartFile) throws IOException {
 
         String fileName = multipartFile.getOriginalFilename();
         File file = new File(fileName);
@@ -105,20 +93,31 @@ public class ClientServiceImpl implements ClientServiceInterface {
         fos.write(multipartFile.getBytes());
         fos.close();
 
-        MongoDatabase myDatabase = mongoTemplate.getDb();
-
-        GridFSBucket gridFSBucket = GridFSBuckets.create(myDatabase);
+        boolean isInsert = false;
 
         try {
-            InputStream streamToUploadFrom = new FileInputStream(new File(fileName));
-            // Create some custom options
-            GridFSUploadOptions options = new GridFSUploadOptions()
-                    .metadata(new Document("type", "presentation"));
 
-            ObjectId fileId = gridFSBucket.uploadFromStream("mongodb-tutorial", streamToUploadFrom, options);
+            MongoDatabase myDatabase = mongoTemplate.getDb();
+            GridFSBucket gridFSBucket = GridFSBuckets.create(myDatabase);
+
+            InputStream streamToUploadFrom = new FileInputStream(new File(fileName));
+
+            GridFSUploadOptions options = new GridFSUploadOptions()
+                    .metadata(new Document("type", "user-data"));
+
+            gridFSBucket.uploadFromStream(fileName, streamToUploadFrom, options);
+
+            BrainSignalsInfo brainSignalsInfo = new BrainSignalsInfo();
+            brainSignalsInfo.setUserName(userName);
+            brainSignalsInfo.setFileName(fileName);
+
+            mongoTemplate.insert(brainSignalsInfo);
+            isInsert = true;
+
         } catch (FileNotFoundException e){
-            // handle exception
+            logger.error("File not found", e);
         }
+        return isInsert;
     }
 
     @Override
@@ -142,13 +141,13 @@ public class ClientServiceImpl implements ClientServiceInterface {
             fos.write(multipartFile.getBytes());
             fos.close();
 
-            File authenticationFile = new File(authenticateFileName);
-            FileOutputStream authenticationFileOS = new FileOutputStream(authenticationFile);
-            System.out.print(brainSignalsInfo.getFileContent().getBytes().length);
-            authenticationFileOS.write(brainSignalsInfo.getFileContent().getBytes());
-            authenticationFileOS.close();
+            MongoDatabase myDatabase = mongoTemplate.getDb();
+            GridFSBucket gridFSBucket = GridFSBuckets.create(myDatabase);
 
-
+            FileOutputStream streamToDownloadTo = new FileOutputStream(authenticateFileName);
+            GridFSDownloadByNameOptions downloadOptions = new GridFSDownloadByNameOptions().revision(0);
+            gridFSBucket.downloadToStreamByName(brainSignalsInfo.getFileName(), streamToDownloadTo, downloadOptions);
+            streamToDownloadTo.close();
 
             isAuthenticated = authenticateFiles(fileName, authenticateFileName);
 

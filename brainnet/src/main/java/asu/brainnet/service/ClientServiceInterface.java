@@ -11,7 +11,7 @@ public interface ClientServiceInterface {
 
     void deleteFileFromS3Bucket(String fileName);
 
-    void uploadDataToMongo(String userName, MultipartFile multipartFile) throws IOException;
+    boolean uploadDataToMongo(String userName, MultipartFile multipartFile) throws IOException;
 
     boolean authenticateUser(String userName, MultipartFile multipartFile);
 }

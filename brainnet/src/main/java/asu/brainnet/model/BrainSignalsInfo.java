@@ -14,8 +14,8 @@ public class BrainSignalsInfo implements Serializable{
     @Field("user_name")
     private String userName;
 
-    @Field("file_content")
-    private String fileContent;
+    @Field("file_name")
+    private String fileName;
 
     public String getHashId() {
         return hashId;
@@ -33,11 +33,11 @@ public class BrainSignalsInfo implements Serializable{
         this.userName = userName;
     }
 
-    public String getFileContent() {
-        return fileContent;
+    public String getFileName() {
+        return fileName;
     }
 
-    public void setFileContent(String fileContent) {
-        this.fileContent = fileContent;
+    public void setFileName(String fileName) {
+        this.fileName = fileName;
     }
 }

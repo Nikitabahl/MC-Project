@@ -49,10 +49,10 @@ public class FileHandlerController {
     }
 
     @PostMapping(path = "/mongo")
-    public void uploadFileToMongo(
+    public boolean uploadFileToMongo(
             @RequestParam(value = "userName") String userName,
             @RequestPart(value = "file") MultipartFile file) throws IOException {
 
-        amazonS3ClientService.uploadDataToMongo(userName, file);
+        return amazonS3ClientService.uploadDataToMongo(userName, file);
     }
 }
