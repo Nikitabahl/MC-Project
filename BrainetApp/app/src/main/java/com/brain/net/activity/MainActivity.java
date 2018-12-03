@@ -110,7 +110,7 @@ public class MainActivity extends Activity {
         myDatabase = SQLiteDatabase.openOrCreateDatabase(database, null);
 
         myDatabase.execSQL("CREATE TABLE IF NOT EXISTS adaptive_metrics(server VARCHAR, " +
-                "latency long, count int)");
+                "latency long, count int, max_battery_drain int)");
 
         serverSpinner.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
             @Override
@@ -217,12 +217,15 @@ public class MainActivity extends Activity {
         Cursor resultSet = myDatabase.rawQuery("Select * from adaptive_metrics " +
                 "WHERE server = '" + FOG + "'",null);
 
+        int batteryFog = 0, batteryCloud = 0;
+
         long networkDelayFog = Long.MAX_VALUE;
         long networkDelayCloud = Long.MAX_VALUE;
 
         if (resultSet.getCount() == 1) {
             resultSet.moveToFirst();
-             networkDelayFog = resultSet.getLong(1);
+            networkDelayFog = resultSet.getLong(1);
+            batteryFog = resultSet.getInt(2);
         }
         resultSet.close();
 
@@ -232,6 +235,7 @@ public class MainActivity extends Activity {
         if (resultSet.getCount() == 1) {
             resultSet.moveToFirst();
             networkDelayCloud = resultSet.getLong(1);
+            batteryCloud = resultSet.getInt(2);
         }
 
         resultSet.close();
@@ -255,9 +259,19 @@ public class MainActivity extends Activity {
             }
 
             if (networkDelayCloud <= networkDelayFog) {
+
+                if (batteryCloud > batLevel) {
+                    serverType = FOG;
+                    return BrainNetHelper.getFogUrl();
+                }
                 serverType = CLOUD;
                 return BrainNetHelper.getCloudUrl();
             }  else {
+
+                if (batteryFog > batLevel) {
+                    serverType = CLOUD;
+                    return BrainNetHelper.getCloudUrl();
+                }
                 serverType = FOG;
                 return BrainNetHelper.getFogUrl();
             }
@@ -359,14 +373,14 @@ public class MainActivity extends Activity {
 
                 case 200:
 
-                    insertOrUpdateLatencyData(server, timer);
+                    int finalBatteryLevel = bm.getIntProperty(BatteryManager.BATTERY_PROPERTY_CAPACITY);
+                    insertOrUpdateLatencyData(server, timer, finalBatteryLevel - initialBatteryLevel);
 
                     if (responseBody.equals("true")) {
                         Toast.makeText(getApplicationContext(), "User Authenticated in "
                                 + Long.toString(timer) + " ms", Toast.LENGTH_SHORT).show();
 
                         Intent intent = new Intent(MainActivity.this, AuthenticatedUser.class);
-                        int finalBatteryLevel = bm.getIntProperty(BatteryManager.BATTERY_PROPERTY_CAPACITY);
 
                         intent.putExtra(LATENCY, timer);
                         intent.putExtra(BATTERY_LEVEL_1, initialBatteryLevel);
@@ -392,26 +406,32 @@ public class MainActivity extends Activity {
         }
     }
 
-    private void insertOrUpdateLatencyData(String server, long timer) {
+    private void insertOrUpdateLatencyData(String server, long timer, int batteryDrain) {
 
         Cursor resultSet = myDatabase.rawQuery("Select * from adaptive_metrics " +
                 "WHERE server = '" + server + "'",null);
 
         if (resultSet.getCount() == 0) {
             myDatabase.execSQL("INSERT into " +
-                    "adaptive_metrics(server, latency, count) " +
-                    "VALUES ('" + server + "', "+ timer +","+ 1 +")");
+                    "adaptive_metrics(server, latency, count, max_battery_drain) " +
+                    "VALUES ('" + server + "'," + timer + "," + 1 + "," + batteryDrain+")");
         } else {
             resultSet.moveToFirst();
             int count = resultSet.getInt(1);
             long timerDB = resultSet.getLong(2);
+            int batteryDrainDB = resultSet.getInt(3);
 
             timerDB += timerDB * count;
             count += 1;
             timerDB /= (long) count;
 
+            if (batteryDrainDB < batteryDrain) {
+                batteryDrainDB = batteryDrain;
+            }
+
             myDatabase.execSQL("Update adaptive_metrics set latency = " + timerDB +
-                    " , count = " + count + " WHERE server = '" + server + "'");
+                    " , count = " + count + ", max_battery_drain = " + batteryDrainDB +
+                    " WHERE server = '" + server + "'");
         }
         resultSet.close();
     }
